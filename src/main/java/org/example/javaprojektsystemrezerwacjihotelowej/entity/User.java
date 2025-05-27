@@ -31,6 +31,13 @@ public class User {
    @OneToMany(mappedBy = "user")
     private Set<Reservation> reservations;
 
+   @ManyToMany
+    @JoinTable(
+          name = "user_rooms",
+          joinColumns = @JoinColumn(name = "user_id"),
+          inverseJoinColumns = @JoinColumn(name = "room_id")
+     )
+    private Set<Room> rooms;
 
 
     public Long getId() {
