@@ -1,12 +1,12 @@
 package org.example.javaprojektsystemrezerwacjihotelowej.entity;
 
-import java.util.List;
-import java.util.Set;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -14,12 +14,19 @@ import lombok.Setter;
 @NoArgsConstructor
 @Table(name = "rooms")
 public class Room {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long room_id;
+    private Long roomId;
+
+    @Column(nullable = false)
     private String roomNumber;
+
     private String floor;
-    private String numberOfBeds;
+
+    @Column(nullable = false)
+    private int numberOfBeds;
+
     private double price;
 
     @ManyToMany(mappedBy = "rooms")
@@ -27,41 +34,4 @@ public class Room {
 
     @OneToMany(mappedBy = "room")
     private List<Reservation> reservations;
-
-    public Long getId() {
-        return room_id;
-    }
-
-    public String getRoomNumber() {
-        return roomNumber;
-    }
-
-    public void setRoomNumber(String roomNumber) {
-        this.roomNumber = roomNumber;
-    }
-
-    public String getFloor() {
-        return floor;
-    }
-
-    public void setFloor(String floor) {
-        this.floor = floor;
-    }
-
-    public String getNumberOfBeds() {
-        return numberOfBeds;
-    }
-
-    public void setNumberOfBeds(String numberOfBeds) {
-        this.numberOfBeds = numberOfBeds;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
 }
