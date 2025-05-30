@@ -5,11 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.Reservation;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.Room;
 import org.example.javaprojektsystemrezerwacjihotelowej.repository.ReservationsRepository;
+import org.example.javaprojektsystemrezerwacjihotelowej.service.pricing.PricingStrategy;
+import org.example.javaprojektsystemrezerwacjihotelowej.service.pricing.PricingStrategyFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -17,6 +18,7 @@ import java.util.List;
 public class ReservationService {
     private final ReservationsRepository reservationsRepository;
     private final RoomService roomService;
+    private final PricingStrategyFactory pricingStrategyFactory;
 
     public List<Reservation> getAllReservations() {
         return reservationsRepository.findAll();
@@ -29,16 +31,41 @@ public class ReservationService {
 
     @Transactional
     public Reservation createReservation(Reservation reservation) {
+        return createReservation(reservation, null);
+    }
+
+    /**
+     * Create a reservation with a specific pricing strategy.
+     * 
+     * @param reservation The reservation to create
+     * @param strategyName The name of the pricing strategy to use, or null to auto-select
+     * @return The created reservation
+     */
+    @Transactional
+    public Reservation createReservation(Reservation reservation, String strategyName) {
         // Pobierz pokój po ID
         Room room = roomService.getRoomById(reservation.getRoom().getRoomId());
-        // Oblicz liczbę dni
-        long days = ChronoUnit.DAYS.between(
-                reservation.getCheckInDate(),
+
+        // Get the appropriate pricing strategy
+        PricingStrategy pricingStrategy;
+        if (strategyName != null) {
+            // Use the specified strategy
+            pricingStrategy = pricingStrategyFactory.getStrategy(strategyName);
+        } else {
+            // Auto-select strategy based on the reservation dates
+            pricingStrategy = pricingStrategyFactory.getStrategy(
+                    reservation.getCheckInDate(), 
+                    reservation.getCheckOutDate()
+            );
+        }
+
+        // Calculate the price using the selected strategy
+        BigDecimal total = pricingStrategy.calculatePrice(
+                room, 
+                reservation.getCheckInDate(), 
                 reservation.getCheckOutDate()
         );
-        // Kalkulacja ceny
-        BigDecimal total = BigDecimal.valueOf(days)
-                .multiply(BigDecimal.valueOf(room.getPrice()));
+
         // Ustaw cenę (BigDecimal)
         reservation.setTotalPrice(total);
         return reservationsRepository.save(reservation);
