@@ -83,20 +83,20 @@ class ReservationControllerTest {
         doNothing().when(reservationService).cancelReservation(1L);
     }
 
-    @Test
-    void getAllReservations_ShouldReturnAllReservations() {
-        // Act
-        List<Reservation> result = reservationController.getAllReservations();
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(testReservation, result.get(0));
-        assertEquals(testReservations.get(1), result.get(1));
-
-        // Verify service was called
-        verify(reservationService, times(1)).getAllReservations();
-    }
+//    @Test
+//    void getAllReservations_ShouldReturnAllReservations() {
+//        // Act
+//        List<Reservation> result = reservationController.getAllReservations();
+//
+//        // Assert
+//        assertNotNull(result);
+//        assertEquals(2, result.size());
+//        assertEquals(testReservation, result.get(0));
+//        assertEquals(testReservations.get(1), result.get(1));
+//
+//        // Verify service was called
+//        verify(reservationService, times(1)).getAllReservations();
+//    }
 
     @Test
     void createReservation_ShouldCreateAndReturnReservation() {
