@@ -43,6 +43,7 @@ public class RefreshTokenService {
     public RefreshToken rotate(RefreshToken old) {
         // unieważnij stary
         old.setRevoked(true);
+        repo.save(old);
         // utwórz nowy
         return create(old.getUser());
     }
