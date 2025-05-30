@@ -101,7 +101,7 @@ class ReservationControllerTest {
     @Test
     void createReservation_ShouldCreateAndReturnReservation() {
         // Act
-        ResponseEntity<Reservation> response = reservationController.createReservation(testReservation);
+        ResponseEntity<Reservation> response = reservationController.createReservation(testReservation, null);
 
         // Assert
         assertNotNull(response);
@@ -122,7 +122,7 @@ class ReservationControllerTest {
         updatedReservation.setSpecialRequests("Extra pillows");
 
         // Act
-        ResponseEntity<Reservation> response = reservationController.updateReservation(1L, updatedReservation);
+        ResponseEntity<Reservation> response = reservationController.updateReservation(1L, updatedReservation, null);
 
         // Assert
         assertNotNull(response);
@@ -136,7 +136,7 @@ class ReservationControllerTest {
     @Test
     void cancelReservation_ShouldReturnNoContent() {
         // Act
-        ResponseEntity<Void> response = reservationController.cancelReservation(1L);
+        ResponseEntity<Void> response = reservationController.cancelReservation(1L, null);
 
         // Assert
         assertNotNull(response);

@@ -21,8 +21,9 @@ class JavaProjektSystemRezerwacjiHotelowejApplicationTests {
     @Test
     void mainMethodShouldNotThrowException() {
         // This test verifies that the main method can be called without errors
+        // Use a random port to avoid conflicts
         assertDoesNotThrow(() -> {
-            JavaProjektSystemRezerwacjiHotelowejApplication.main(new String[]{});
+            JavaProjektSystemRezerwacjiHotelowejApplication.main(new String[]{"--server.port=0"});
         });
     }
 
