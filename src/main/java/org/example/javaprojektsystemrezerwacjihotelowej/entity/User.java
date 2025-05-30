@@ -1,35 +1,51 @@
 package org.example.javaprojektsystemrezerwacjihotelowej.entity;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-
-@Entity
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Entity
 @Table(name = "users")
-
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long user_id;
+   private Long user_id;
+
     private String username;
     private String usersurname;
+
+    @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = false, length = 255)
+    private String password;
+
     private Long phone;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role_type", nullable = false)
-    private Role_type roleType;
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns        = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
    @OneToMany(mappedBy = "user")
     private Set<Reservation> reservations;
+
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
    @ManyToMany
     @JoinTable(
@@ -39,45 +55,8 @@ public class User {
      )
     private Set<Room> rooms;
 
-
-    public Long getId() {
-        return user_id;
+    @PrePersist
+    private void prePersist() {
+        this.createdAt = LocalDateTime.now();
     }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getUsersurname() {
-        return usersurname;
-    }
-
-    public void setUsersurname(String usersurname) {
-        this.usersurname = usersurname;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public Long getPhone() {
-        return phone;
-    }
-
-    public void setPhone(Long phone) {
-        this.phone = phone;
-    }
-
-
-
-
-
 }

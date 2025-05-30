@@ -1,7 +1,3 @@
 package org.example.javaprojektsystemrezerwacjihotelowej.entity;
 
-public enum Role_type {
-    ADMIN,
-    USER,
-    MANAGER
-}
+public enum RoleName { USER, ADMIN, MENAGER }
