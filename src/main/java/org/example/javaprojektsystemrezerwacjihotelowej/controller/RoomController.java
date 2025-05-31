@@ -36,6 +36,18 @@ public class RoomController {
         return roomService.getAllRooms();
     }
 
+    @Operation(summary = "Get room by ID", description = "Retrieve a specific room by its ID.")
+    @GetMapping("/{id}")
+    @RoleBasedAccess(
+        allowedRoles = {RoleName.ADMIN, RoleName.MENAGER, RoleName.USER},
+        resourceType = RoleBasedAccess.ResourceType.ROOM,
+        allowedOperations = {RoleBasedAccess.Operation.VIEW}
+    )
+    public ResponseEntity<Room> getRoomById(@PathVariable Long id) {
+        Room room = roomService.getRoomById(id);
+        return ResponseEntity.ok(room);
+    }
+
     @Operation(summary = "Create a new room", description = "Add a new room to the hotel system.")
     @PostMapping
     @RoleBasedAccess(

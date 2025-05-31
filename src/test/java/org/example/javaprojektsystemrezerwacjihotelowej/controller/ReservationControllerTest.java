@@ -1,9 +1,12 @@
 package org.example.javaprojektsystemrezerwacjihotelowej.controller;
 
+import org.example.javaprojektsystemrezerwacjihotelowej.dto.ReservationDTO;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.Reservation;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.Room;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.User;
+import org.example.javaprojektsystemrezerwacjihotelowej.repository.UserRepository;
 import org.example.javaprojektsystemrezerwacjihotelowej.service.ReservationService;
+import org.example.javaprojektsystemrezerwacjihotelowej.service.RoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +34,12 @@ class ReservationControllerTest {
 
     @Mock
     private ReservationService reservationService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private RoomService roomService;
 
     @InjectMocks
     private ReservationController reservationController;
@@ -81,6 +90,12 @@ class ReservationControllerTest {
         when(reservationService.createReservation(any(Reservation.class))).thenReturn(testReservation);
         when(reservationService.updateReservation(eq(1L), any(Reservation.class))).thenReturn(testReservation);
         doNothing().when(reservationService).cancelReservation(1L);
+
+        // Setup UserRepository mock
+        when(userRepository.findById(testUser.getUser_id())).thenReturn(java.util.Optional.of(testUser));
+
+        // Setup RoomService mock
+        when(roomService.getRoomById(testRoom.getRoomId())).thenReturn(testRoom);
     }
 
     @Test
@@ -100,8 +115,17 @@ class ReservationControllerTest {
 
     @Test
     void createReservation_ShouldCreateAndReturnReservation() {
+        // Arrange
+        ReservationDTO reservationDTO = new ReservationDTO(
+            testReservation.getCheckInDate(),
+            testReservation.getCheckOutDate(),
+            testReservation.getSpecialRequests(),
+            testUser.getUser_id(),
+            testRoom.getRoomId()
+        );
+
         // Act
-        ResponseEntity<Reservation> response = reservationController.createReservation(testReservation, null);
+        ResponseEntity<Reservation> response = reservationController.createReservation(reservationDTO, null);
 
         // Assert
         assertNotNull(response);
@@ -109,7 +133,7 @@ class ReservationControllerTest {
         assertEquals(testReservation, response.getBody());
 
         // Verify service was called
-        verify(reservationService, times(1)).createReservation(testReservation);
+        verify(reservationService, times(1)).createReservation(any(Reservation.class));
     }
 
     @Test

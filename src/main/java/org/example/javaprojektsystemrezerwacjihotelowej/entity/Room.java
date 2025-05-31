@@ -1,5 +1,6 @@
 package org.example.javaprojektsystemrezerwacjihotelowej.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,8 +31,10 @@ public class Room {
     private double price;
 
     @ManyToMany(mappedBy = "rooms")
+    @JsonIgnore
     private Set<User> users;
 
     @OneToMany(mappedBy = "room")
+    @JsonIgnore
     private List<Reservation> reservations;
 }

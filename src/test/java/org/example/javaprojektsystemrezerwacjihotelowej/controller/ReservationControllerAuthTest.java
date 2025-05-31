@@ -1,9 +1,12 @@
 package org.example.javaprojektsystemrezerwacjihotelowej.controller;
 
+import org.example.javaprojektsystemrezerwacjihotelowej.dto.ReservationDTO;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.Reservation;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.Room;
 import org.example.javaprojektsystemrezerwacjihotelowej.entity.User;
+import org.example.javaprojektsystemrezerwacjihotelowej.repository.UserRepository;
 import org.example.javaprojektsystemrezerwacjihotelowej.service.ReservationService;
+import org.example.javaprojektsystemrezerwacjihotelowej.service.RoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +39,12 @@ class ReservationControllerAuthTest {
 
     @Mock
     private ReservationService reservationService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private RoomService roomService;
 
     @InjectMocks
     private ReservationController reservationController;
@@ -84,6 +93,13 @@ class ReservationControllerAuthTest {
         when(reservationService.createReservation(any(Reservation.class))).thenReturn(testReservation);
         when(reservationService.updateReservation(eq(1L), any(Reservation.class))).thenReturn(testReservation);
         doNothing().when(reservationService).cancelReservation(1L);
+
+        // Setup UserRepository mock
+        when(userRepository.findById(testUser.getUser_id())).thenReturn(java.util.Optional.of(testUser));
+        when(userRepository.findById(otherUser.getUser_id())).thenReturn(java.util.Optional.of(otherUser));
+
+        // Setup RoomService mock
+        when(roomService.getRoomById(1L)).thenReturn(testReservation.getRoom());
     }
 
     private UserDetails createUserDetails(String username, String... roles) {
@@ -130,42 +146,63 @@ class ReservationControllerAuthTest {
     @Test
     void createReservation_AsAdmin_ForOtherUser_ShouldSucceed() {
         // Arrange
-        Reservation newReservation = new Reservation();
-        newReservation.setUser(otherUser);
+        ReservationDTO newReservationDTO = new ReservationDTO(
+            LocalDate.now(),
+            LocalDate.now().plusDays(3),
+            "Special requests",
+            otherUser.getUser_id(),
+            1L // Using a dummy room ID
+        );
+
+        // Mock the service to return testReservation when createReservation is called with any Reservation
+        when(reservationService.createReservation(any(Reservation.class))).thenReturn(testReservation);
 
         // Act
-        ResponseEntity<Reservation> response = reservationController.createReservation(newReservation, adminUserDetails);
+        ResponseEntity<Reservation> response = reservationController.createReservation(newReservationDTO, adminUserDetails);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(reservationService).createReservation(newReservation);
+        verify(reservationService).createReservation(any(Reservation.class));
     }
 
     @Test
     void createReservation_AsUser_ForSelf_ShouldSucceed() {
         // Arrange
-        Reservation newReservation = new Reservation();
-        newReservation.setUser(testUser);
+        ReservationDTO newReservationDTO = new ReservationDTO(
+            LocalDate.now(),
+            LocalDate.now().plusDays(3),
+            "Special requests",
+            testUser.getUser_id(),
+            1L // Using a dummy room ID
+        );
+
+        // Mock the service to return testReservation when createReservation is called with any Reservation
+        when(reservationService.createReservation(any(Reservation.class))).thenReturn(testReservation);
 
         // Act
-        ResponseEntity<Reservation> response = reservationController.createReservation(newReservation, regularUserDetails);
+        ResponseEntity<Reservation> response = reservationController.createReservation(newReservationDTO, regularUserDetails);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(reservationService).createReservation(newReservation);
+        verify(reservationService).createReservation(any(Reservation.class));
     }
 
     @Test
     void createReservation_AsUser_ForOtherUser_ShouldThrowForbidden() {
         // Arrange
-        Reservation newReservation = new Reservation();
-        newReservation.setUser(otherUser);
+        ReservationDTO newReservationDTO = new ReservationDTO(
+            LocalDate.now(),
+            LocalDate.now().plusDays(3),
+            "Special requests",
+            otherUser.getUser_id(),
+            1L // Using a dummy room ID
+        );
 
         // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-            reservationController.createReservation(newReservation, regularUserDetails);
+            reservationController.createReservation(newReservationDTO, regularUserDetails);
         });
-        
+
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("You can only create reservations for your own account", exception.getReason());
         verify(reservationService, never()).createReservation(any());
@@ -189,7 +226,7 @@ class ReservationControllerAuthTest {
     void updateReservation_AsUser_ForOtherUser_ShouldThrowForbidden() {
         // Arrange
         Reservation updatedReservation = new Reservation();
-        
+
         // Change the user email to make ownership check fail
         UserDetails otherUserDetails = createUserDetails("other@example.com", "ROLE_USER");
 
@@ -197,7 +234,7 @@ class ReservationControllerAuthTest {
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             reservationController.updateReservation(1L, updatedReservation, otherUserDetails);
         });
-        
+
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("You can only update your own reservations", exception.getReason());
         verify(reservationService, never()).updateReservation(anyLong(), any());
@@ -232,7 +269,7 @@ class ReservationControllerAuthTest {
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             reservationController.cancelReservation(1L, otherUserDetails);
         });
-        
+
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertEquals("You can only cancel your own reservations", exception.getReason());
         verify(reservationService, never()).cancelReservation(anyLong());

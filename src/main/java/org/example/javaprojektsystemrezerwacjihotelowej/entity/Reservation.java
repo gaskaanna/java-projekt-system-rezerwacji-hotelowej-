@@ -1,6 +1,7 @@
 package org.example.javaprojektsystemrezerwacjihotelowej.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -45,10 +46,12 @@ public class Reservation {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "room_id")
+    @JsonIgnore
     private Room room;
 
     @PrePersist

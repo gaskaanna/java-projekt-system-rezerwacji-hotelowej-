@@ -5,6 +5,7 @@ import java.util.Set;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,9 +39,11 @@ public class User {
             joinColumns        = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+    @JsonIgnore
     private Set<Role> roles = new HashSet<>();
 
    @OneToMany(mappedBy = "user")
+    @JsonIgnore
     private Set<Reservation> reservations;
 
 
@@ -53,6 +56,7 @@ public class User {
           joinColumns = @JoinColumn(name = "user_id"),
           inverseJoinColumns = @JoinColumn(name = "room_id")
      )
+    @JsonIgnore
     private Set<Room> rooms;
 
     @PrePersist
