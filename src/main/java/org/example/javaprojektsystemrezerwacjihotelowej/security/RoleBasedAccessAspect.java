@@ -92,7 +92,7 @@ public class RoleBasedAccessAspect {
         }
 
         // If we get here, access is denied
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        throw new AccessDeniedException("Access denied");
     }
 
     private boolean hasRole(Authentication authentication, RoleName roleName) {

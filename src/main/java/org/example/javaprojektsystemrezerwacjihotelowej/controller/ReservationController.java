@@ -11,6 +11,7 @@ import org.example.javaprojektsystemrezerwacjihotelowej.repository.UserRepositor
 import org.example.javaprojektsystemrezerwacjihotelowej.security.RoleBasedAccess;
 import org.example.javaprojektsystemrezerwacjihotelowej.service.ReservationService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -60,8 +61,7 @@ public class ReservationController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + RoleName.ADMIN.name()));
 
             if (!isAdmin && !user.getEmail().equals(userDetails.getUsername())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "You can only create reservations for your own account");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only create reservations for your own account");
             }
         }
 
@@ -101,8 +101,7 @@ public class ReservationController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + RoleName.ADMIN.name()));
 
             if (!isAdmin && !existingReservation.getUser().getEmail().equals(userDetails.getUsername())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "You can only update your own reservations");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own reservations");
             }
         }
 
@@ -130,8 +129,7 @@ public class ReservationController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + RoleName.MENAGER.name()));
 
             if (!isAdmin && !isManager && !existingReservation.getUser().getEmail().equals(userDetails.getUsername())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "You can only cancel your own reservations");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only cancel your own reservations");
             }
         }
 

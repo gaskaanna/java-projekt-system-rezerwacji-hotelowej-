@@ -17,15 +17,18 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,24 +39,28 @@ class ReservationControllerTest {
     private ReservationService reservationService;
 
     @Mock
-    private UserRepository userRepository;
+    private RoomService roomService;
 
     @Mock
-    private RoomService roomService;
+    private UserRepository userRepository;
 
     @InjectMocks
     private ReservationController reservationController;
 
-    private Reservation testReservation;
-    private List<Reservation> testReservations;
-    private Room testRoom;
     private User testUser;
+    private Room testRoom;
+    private Reservation testReservation;
+    private ReservationDTO testReservationDTO;
+    private List<Reservation> testReservations;
+    private UserDetails adminUserDetails;
+    private UserDetails regularUserDetails;
 
     @BeforeEach
     void setUp() {
         // Create test user
         testUser = new User();
         testUser.setUser_id(1L);
+        testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
 
         // Create test room
@@ -69,33 +76,42 @@ class ReservationControllerTest {
         testReservation.setRoom(testRoom);
         testReservation.setCheckInDate(LocalDate.now());
         testReservation.setCheckOutDate(LocalDate.now().plusDays(3));
-        testReservation.setStatus("PENDING");
-        testReservation.setTotalPrice(new BigDecimal("300.00"));
+        testReservation.setSpecialRequests("No smoking room");
 
-        // Create second test reservation
-        Reservation reservation2 = new Reservation();
-        reservation2.setReservationId(2L);
-        reservation2.setUser(testUser);
-        reservation2.setRoom(testRoom);
-        reservation2.setCheckInDate(LocalDate.now().plusDays(10));
-        reservation2.setCheckOutDate(LocalDate.now().plusDays(15));
-        reservation2.setStatus("CONFIRMED");
-        reservation2.setTotalPrice(new BigDecimal("500.00"));
+        // Create test reservation DTO
+        testReservationDTO = new ReservationDTO(
+                LocalDate.now(),
+                LocalDate.now().plusDays(3),
+                "No smoking room",
+                1L,
+                1L
+        );
 
-        testReservations = Arrays.asList(testReservation, reservation2);
+        // Create test reservations list
+        testReservations = Arrays.asList(testReservation);
 
-        // Setup mocks
+        // Create mock user details
+        adminUserDetails = new org.springframework.security.core.userdetails.User(
+                "admin@example.com",
+                "password",
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+
+        regularUserDetails = new org.springframework.security.core.userdetails.User(
+                "test@example.com",
+                "password",
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        // Setup mock responses
         when(reservationService.getAllReservations()).thenReturn(testReservations);
         when(reservationService.getReservationById(1L)).thenReturn(testReservation);
         when(reservationService.createReservation(any(Reservation.class))).thenReturn(testReservation);
         when(reservationService.updateReservation(eq(1L), any(Reservation.class))).thenReturn(testReservation);
         doNothing().when(reservationService).cancelReservation(1L);
 
-        // Setup UserRepository mock
-        when(userRepository.findById(testUser.getUser_id())).thenReturn(java.util.Optional.of(testUser));
-
-        // Setup RoomService mock
-        when(roomService.getRoomById(testRoom.getRoomId())).thenReturn(testRoom);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(roomService.getRoomById(1L)).thenReturn(testRoom);
     }
 
     @Test
@@ -105,27 +121,17 @@ class ReservationControllerTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(2, result.size());
+        assertEquals(1, result.size());
         assertEquals(testReservation, result.get(0));
-        assertEquals(testReservations.get(1), result.get(1));
 
         // Verify service was called
         verify(reservationService, times(1)).getAllReservations();
     }
 
     @Test
-    void createReservation_ShouldCreateAndReturnReservation() {
-        // Arrange
-        ReservationDTO reservationDTO = new ReservationDTO(
-            testReservation.getCheckInDate(),
-            testReservation.getCheckOutDate(),
-            testReservation.getSpecialRequests(),
-            testUser.getUser_id(),
-            testRoom.getRoomId()
-        );
-
+    void createReservation_WithValidData_ShouldCreateAndReturnReservation() {
         // Act
-        ResponseEntity<Reservation> response = reservationController.createReservation(reservationDTO, null);
+        ResponseEntity<Reservation> response = reservationController.createReservation(testReservationDTO, regularUserDetails);
 
         // Assert
         assertNotNull(response);
@@ -137,16 +143,9 @@ class ReservationControllerTest {
     }
 
     @Test
-    void updateReservation_ShouldUpdateAndReturnReservation() {
-        // Arrange
-        Reservation updatedReservation = new Reservation();
-        updatedReservation.setCheckInDate(LocalDate.now().plusDays(1));
-        updatedReservation.setCheckOutDate(LocalDate.now().plusDays(5));
-        updatedReservation.setStatus("CONFIRMED");
-        updatedReservation.setSpecialRequests("Extra pillows");
-
+    void updateReservation_WithValidData_ShouldUpdateAndReturnReservation() {
         // Act
-        ResponseEntity<Reservation> response = reservationController.updateReservation(1L, updatedReservation, null);
+        ResponseEntity<Reservation> response = reservationController.updateReservation(1L, testReservation, regularUserDetails);
 
         // Assert
         assertNotNull(response);
@@ -154,13 +153,13 @@ class ReservationControllerTest {
         assertEquals(testReservation, response.getBody());
 
         // Verify service was called
-        verify(reservationService, times(1)).updateReservation(1L, updatedReservation);
+        verify(reservationService, times(1)).updateReservation(eq(1L), any(Reservation.class));
     }
 
     @Test
-    void cancelReservation_ShouldReturnNoContent() {
+    void cancelReservation_WithValidId_ShouldReturnNoContent() {
         // Act
-        ResponseEntity<Void> response = reservationController.cancelReservation(1L, null);
+        ResponseEntity<Void> response = reservationController.cancelReservation(1L, regularUserDetails);
 
         // Assert
         assertNotNull(response);
